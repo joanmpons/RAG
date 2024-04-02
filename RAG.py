@@ -97,18 +97,6 @@ context = []
 for i in mylist:
   context.append(embeddings.embed_query(i))
 
-#Query
-query='Necesito rehabilitar un edificio antiguo'
-query_result = embeddings.embed_query(query)
-
-similarity = []
-for i in context:
-  similarity.append(np.dot(query_result,i)/np.linalg.norm(query_result)*np.linalg.norm(i))
-
-results_index = [similarity.index(x) for x in similarity if x > np.quantile(similarity,0.99)]
-for i in results_index:
-  print(mylist[i])
-
 #%% Chat GPT query with RAG
 
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
@@ -118,20 +106,48 @@ chat = ChatOpenAI(
     model='gpt-3.5-turbo'
 )
 
+# Initial message
 message = [
     SystemMessage(content = ''),
     AIMessage(content = ''),
     HumanMessage(content = '')
     ]
 
-#Initial context
-response = chat(message)
-response.content
-message.append(response)
-
-#prompt
-prompt = HumanMessage(content = 'Tell me about dinosaurs')
-message.append(prompt)
-
+# Initial context
 response = chat(message)
 print(response.content)
+message.append(response)
+
+# Query
+query = HumanMessage(content = 'Necesito rehabilitar un edificio antiguo')
+message.append(query)
+query_result = embeddings.embed_query(query)
+
+# Similarity search
+similarity = []
+for i in context:
+  similarity.append(np.dot(query_result,i)/np.linalg.norm(query_result)*np.linalg.norm(i))
+
+# Add context to the chat
+results_index = [similarity.index(x) for x in similarity if x > np.quantile(similarity,0.99)]
+for i in results_index:
+    chat_context.append(mylist[i])
+chat_context = "\n".join(chat_context)
+augmented_query = f"""Using the contexts below, answer the query.
+
+Contexts:
+{chat_context}
+
+Query: {query.content}"""
+
+# Send Augmented query
+query = HumanMessage(
+    content=augmented_query
+)
+# Append query to message
+message.append(query)
+# Get ChatGPT RAG response
+response = chat(message)
+print(response.content)
+
+
