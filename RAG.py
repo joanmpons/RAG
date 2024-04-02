@@ -98,9 +98,9 @@ for i in mylist:
   context.append(embeddings.embed_query(i))
 
 #%% Chat GPT query with RAG
-
+# Get API key
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
-
+# Define chatOpenAI object with model specifications
 chat = ChatOpenAI(
     openai_api_key=os.environ["OPENAI_API_KEY"],
     model='gpt-3.5-turbo'
@@ -113,26 +113,29 @@ message = [
     HumanMessage(content = '')
     ]
 
-# Initial context
+# Appending initial message and response for converstional context
 response = chat(message)
 print(response.content)
 message.append(response)
 
-# Query
+# User query
 query = HumanMessage(content = 'Necesito rehabilitar un edificio antiguo')
 message.append(query)
+# Generate query embedding
 query_result = embeddings.embed_query(query)
 
-# Similarity search
+# Cosine similarity search
 similarity = []
 for i in context:
   similarity.append(np.dot(query_result,i)/np.linalg.norm(query_result)*np.linalg.norm(i))
 
-# Add context to the chat
+# Provide new informational context by using the scraped information and define similarity threshold
 results_index = [similarity.index(x) for x in similarity if x > np.quantile(similarity,0.99)]
 for i in results_index:
     chat_context.append(mylist[i])
 chat_context = "\n".join(chat_context)
+
+# Generate the augmented query with the new information
 augmented_query = f"""Using the contexts below, answer the query.
 
 Contexts:
@@ -140,14 +143,14 @@ Contexts:
 
 Query: {query.content}"""
 
-# Send Augmented query
+# Send Augmented query with conversational and informational context
 query = HumanMessage(
     content=augmented_query
 )
-# Append query to message
 message.append(query)
-# Get ChatGPT RAG response
 response = chat(message)
+
+# Get ChatGPT RAG response
 print(response.content)
 
 
