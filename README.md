@@ -11,4 +11,4 @@ La estructura simplificada de la solución es la siguiente:
   - Embedding de la información obtenida.
   - Query a ChatGPT.
   - Análisis de cosine similarity para extraer las ayudas relevantes para la query.
-  - Query enriquecida con el nuevo contexto a ChatGPT
+  - Query enriquecida con el nuevo contexto a ChatGPT.
